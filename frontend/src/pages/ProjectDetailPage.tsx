@@ -1,5 +1,29 @@
+// ============================================================================
+// src/pages/ProjectDetailPage.tsx — Single Project Detail View
+// ============================================================================
+//
+// This page shows the full details of one project. It's reached via the URL
+// /projects/:id (e.g., /projects/42). The `:id` is a URL parameter that
+// React Router extracts with the useParams() hook.
+//
+// FEATURES:
+//   • Display project details (title, description, skills, tech, domains)
+//   • Show team members list
+//   • Owner-only actions: invite teammates, mark project as completed
+//   • Back button using navigate(-1)
+//
+// REACT CONCEPTS:
+//   • useParams — Extracts dynamic URL segments (like :id from /projects/:id)
+//   • Functional state update — setProject((p) => p ? {...p, status: "COMPLETED"} : p)
+//   • Conditional rendering based on ownership — different UI for owners vs viewers
+// ============================================================================
+
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+// useParams — Hook that returns an object of key/value pairs from the URL.
+//   For the route `/projects/:id`, visiting `/projects/42` gives { id: "42" }.
+//   Note: the value is always a STRING, even if it looks like a number.
+
 import {
     getProjectById,
     completeProject,
@@ -21,25 +45,35 @@ import {
 } from "lucide-react";
 
 export default function ProjectDetailPage() {
+    // ---- URL PARAMETER ----
+    // useParams<{ id: string }>() extracts the :id from the URL.
+    // The generic { id: string } tells TypeScript the expected parameter names.
     const { id } = useParams<{ id: string }>();
+
     const { profile } = useAuth();
     const { addToast } = useToast();
     const navigate = useNavigate();
-    const [project, setProject] = useState<Project | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [inviteEmail, setInviteEmail] = useState("");
-    const [inviting, setInviting] = useState(false);
-    const [completing, setCompleting] = useState(false);
-    const [showInvite, setShowInvite] = useState(false);
 
+    // ---- STATE ----
+    const [project, setProject] = useState<Project | null>(null);  // Project data (null until loaded)
+    const [loading, setLoading] = useState(true);
+    const [inviteEmail, setInviteEmail] = useState("");            // Email for teammate invitation
+    const [inviting, setInviting] = useState(false);               // Loading state for invite action
+    const [completing, setCompleting] = useState(false);            // Loading state for complete action
+    const [showInvite, setShowInvite] = useState(false);           // Toggle invite input visibility
+
+    // ---- FETCH PROJECT DATA ----
+    // Runs when the component mounts or when `id` changes.
     useEffect(() => {
-        if (!id) return;
+        if (!id) return;  // Guard: don't fetch if there's no ID in the URL
         getProjectById(Number(id))
+            // Number(id) converts the string "42" to the number 42
             .then((p) => setProject(p as unknown as Project))
             .catch(() => addToast("Project not found", "error"))
             .finally(() => setLoading(false));
     }, [id]);
 
+    // ---- LOADING / NOT FOUND STATES ----
     if (loading) {
         return (
             <div className="spinner-overlay">
@@ -61,19 +95,25 @@ export default function ProjectDetailPage() {
         );
     }
 
+    // ---- COMPUTED VALUES ----
+    // Check if the logged-in user is the project owner
     const isOwner = profile?.email === project.email;
+
+    // Parse comma-separated strings into arrays for rendering as tag chips
+    // .split(",") → .map(trim) → .filter(Boolean) removes empty strings
     const skills = project.requiredSkills?.split(",").map((s) => s.trim()).filter(Boolean) || [];
     const tech = project.preferredTechnologies?.split(",").map((s) => s.trim()).filter(Boolean) || [];
     const domains = project.domain?.split(",").map((s) => s.trim()).filter(Boolean) || [];
 
+    // ---- INVITE TEAMMATE HANDLER ----
     const handleInvite = async () => {
         if (!inviteEmail.trim()) return;
         setInviting(true);
         try {
             await sendTeammateRequest(project.id, inviteEmail.trim());
             addToast("Invitation sent!", "success");
-            setInviteEmail("");
-            setShowInvite(false);
+            setInviteEmail("");      // Clear the input
+            setShowInvite(false);    // Hide the invite form
         } catch (err: any) {
             addToast(err?.message || "Failed to send invitation", "error");
         } finally {
@@ -81,10 +121,16 @@ export default function ProjectDetailPage() {
         }
     };
 
+    // ---- MARK COMPLETE HANDLER ----
     const handleComplete = async () => {
         setCompleting(true);
         try {
             await completeProject(project.id);
+            // FUNCTIONAL STATE UPDATE:
+            // Instead of fetching the entire project again from the API,
+            // we update just the status field locally.
+            // `(p) => p ? {...p, status: "COMPLETED"} : p` means:
+            //   "If p exists, create a copy with status changed. If null, leave as null."
             setProject((p) => (p ? { ...p, status: "COMPLETED" } : p));
             addToast("Project marked as completed 🎉", "success");
         } catch (err: any) {
@@ -94,8 +140,10 @@ export default function ProjectDetailPage() {
         }
     };
 
+    // ---- JSX ----
     return (
         <div className="page-container">
+            {/* BACK BUTTON — goes to the previous page in browser history */}
             <button
                 className="btn btn-ghost btn-sm"
                 onClick={() => navigate(-1)}
@@ -104,7 +152,9 @@ export default function ProjectDetailPage() {
                 <ArrowLeft size={16} /> Back
             </button>
 
-            {/* header */}
+            {/* ============================================================= */}
+            {/* PROJECT HEADER — Title, badges, metadata                      */}
+            {/* ============================================================= */}
             <div className="project-detail-header">
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
                     <div>
@@ -113,17 +163,20 @@ export default function ProjectDetailPage() {
                             Posted by {project.email}
                         </p>
                     </div>
+                    {/* STATUS + TYPE + VISIBILITY BADGES */}
                     <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                         <span className={`badge ${project.status === "ACTIVE" ? "badge-success" : "badge-neutral"}`}>
                             {project.status}
                         </span>
                         <span className="badge badge-accent">{project.type}</span>
                         <span className="badge badge-info">
+                            {/* Render different icon based on visibility */}
                             {project.visibility === "public" ? <Globe size={12} /> : <Lock size={12} />}
                             <span style={{ marginLeft: 4 }}>{project.visibility}</span>
                         </span>
                     </div>
                 </div>
+                {/* DATE + GITHUB LINK */}
                 <div className="project-detail-meta">
                     <div className="project-card-meta">
                         <Calendar size={14} />
@@ -131,11 +184,12 @@ export default function ProjectDetailPage() {
                             year: "numeric", month: "long", day: "numeric"
                         })}
                     </div>
+                    {/* GitHub link — only renders if the project has a repo URL */}
                     {project.githubRepo && (
                         <a
                             href={project.githubRepo}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                            target="_blank"           // Opens in a new tab
+                            rel="noopener noreferrer"  // Security best practice for target="_blank"
                             className="btn btn-ghost btn-sm"
                         >
                             <GitBranch size={14} /> GitHub <ExternalLink size={12} />
@@ -144,10 +198,12 @@ export default function ProjectDetailPage() {
                 </div>
             </div>
 
-            {/* body */}
+            {/* ============================================================= */}
+            {/* PROJECT BODY — Two-column layout (details + sidebar)          */}
+            {/* ============================================================= */}
             <div className="project-detail-body">
+                {/* ---- LEFT COLUMN: Description, Skills, Tech, Domains ---- */}
                 <div>
-                    {/* description */}
                     {project.description && (
                         <div className="profile-section">
                             <h3>📝 Description</h3>
@@ -157,7 +213,7 @@ export default function ProjectDetailPage() {
                         </div>
                     )}
 
-                    {/* skills */}
+                    {/* Required Skills Tags */}
                     <div className="profile-section">
                         <h3>🛠 Required Skills</h3>
                         <div className="tag-list">
@@ -167,6 +223,7 @@ export default function ProjectDetailPage() {
                         </div>
                     </div>
 
+                    {/* Preferred Technologies Tags (only if present) */}
                     {tech.length > 0 && (
                         <div className="profile-section">
                             <h3>⚡ Preferred Technologies</h3>
@@ -178,6 +235,7 @@ export default function ProjectDetailPage() {
                         </div>
                     )}
 
+                    {/* Domains Tags (only if present) */}
                     {domains.length > 0 && (
                         <div className="profile-section">
                             <h3>🌐 Domains</h3>
@@ -190,15 +248,16 @@ export default function ProjectDetailPage() {
                     )}
                 </div>
 
-                {/* sidebar */}
+                {/* ---- RIGHT COLUMN: Team + Actions (sidebar) ---- */}
                 <div>
-                    {/* team */}
+                    {/* ---- TEAM LIST ---- */}
                     <div className="profile-section">
                         <h3><Users size={18} /> Team</h3>
                         {project.teammates && project.teammates.length > 0 ? (
                             <div className="team-list">
                                 {project.teammates.map((t) => (
                                     <div key={t.email} className="team-member">
+                                        {/* Avatar with first letter of name or email */}
                                         <div className="team-member-avatar">
                                             {t.name?.[0]?.toUpperCase() || t.email[0].toUpperCase()}
                                         </div>
@@ -217,13 +276,16 @@ export default function ProjectDetailPage() {
                             </p>
                         )}
 
+                        {/* INVITE TEAMMATE — Only visible to the project owner on active projects */}
                         {isOwner && project.status === "ACTIVE" && (
                             <div style={{ marginTop: "1rem" }}>
                                 {!showInvite ? (
+                                    // Button to toggle the invite input
                                     <button className="btn btn-secondary btn-sm" onClick={() => setShowInvite(true)} style={{ width: "100%" }}>
                                         <UserPlus size={14} /> Invite Teammate
                                     </button>
                                 ) : (
+                                    // Invite input + send button
                                     <div style={{ display: "flex", gap: "0.5rem" }}>
                                         <input
                                             className="form-input"
@@ -231,6 +293,7 @@ export default function ProjectDetailPage() {
                                             value={inviteEmail}
                                             onChange={(e) => setInviteEmail(e.target.value)}
                                             onKeyDown={(e) => e.key === "Enter" && handleInvite()}
+                                            // Submit on Enter key
                                             style={{ fontSize: "0.8rem" }}
                                         />
                                         <button className="btn btn-primary btn-sm" onClick={handleInvite} disabled={inviting}>
@@ -242,7 +305,7 @@ export default function ProjectDetailPage() {
                         )}
                     </div>
 
-                    {/* actions */}
+                    {/* MARK AS COMPLETED — Only visible to the owner of active projects */}
                     {isOwner && project.status === "ACTIVE" && (
                         <div className="profile-section" style={{ marginTop: "1rem" }}>
                             <h3><CheckCircle2 size={18} /> Actions</h3>

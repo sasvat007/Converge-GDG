@@ -87,7 +87,7 @@ public class ProjectTeamService {
         // ensure candidate exists
         Optional<JsonData> candidate = jsonDataRepository.findByEmail(targetEmail);
         if (candidate.isEmpty()) {
-            throw new RuntimeException("Target user profile not found");
+            throw new RuntimeException("No registered user found with email: " + targetEmail);
         }
 
         // ensure not already teammate
@@ -96,7 +96,8 @@ public class ProjectTeamService {
         }
 
         // ensure no existing pending request
-        var existing = projectTeamRequestRepository.findByProjectIdAndTargetEmailAndStatus(projectId, targetEmail, "PENDING");
+        var existing = projectTeamRequestRepository.findByProjectIdAndTargetEmailAndStatus(projectId, targetEmail,
+                "PENDING");
         if (existing.isPresent()) {
             return existing.get();
         }
@@ -115,7 +116,8 @@ public class ProjectTeamService {
         return projectTeamRequestRepository.save(req);
     }
 
-    // Target user accepts a pending request — creates ProjectTeam row and deletes the request
+    // Target user accepts a pending request — creates ProjectTeam row and deletes
+    // the request
     public ProjectTeam acceptTeammateRequest(Long requestId) {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || auth.getName() == null) {
@@ -203,7 +205,8 @@ public class ProjectTeamService {
         // Add owner
         memberEmails.add(project.getEmail());
         // Add teammates
-        projectTeamRepository.findAllByProjectId(project.getId()).forEach(team -> memberEmails.add(team.getMemberEmail()));
+        projectTeamRepository.findAllByProjectId(project.getId())
+                .forEach(team -> memberEmails.add(team.getMemberEmail()));
 
         // Fetch all profiles in one go to get names
         List<JsonData> memberProfiles = memberEmails.stream()
@@ -236,7 +239,8 @@ public class ProjectTeamService {
     // List teammates with basic profile fields
     public List<Map<String, Object>> listTeammatesForProject(Long projectId) {
         List<ProjectTeam> rows = projectTeamRepository.findAllByProjectId(projectId);
-        if (rows == null || rows.isEmpty()) return List.of();
+        if (rows == null || rows.isEmpty())
+            return List.of();
 
         // For each row, fetch JsonData by email and map to minimal profile
         return rows.stream().map(r -> {
@@ -245,7 +249,7 @@ public class ProjectTeamService {
             Optional<JsonData> opt = jsonDataRepository.findByEmail(r.getMemberEmail());
             if (opt.isPresent()) {
                 JsonData p = opt.get();
-                m.put("id", p.getId());              // ✅ ADD: teammate's JsonData.id
+                m.put("id", p.getId()); // ✅ ADD: teammate's JsonData.id
                 m.put("email", p.getEmail());
                 m.put("name", p.getName());
                 m.put("year", p.getYear());

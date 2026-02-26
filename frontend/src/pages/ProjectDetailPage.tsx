@@ -115,7 +115,21 @@ export default function ProjectDetailPage() {
             setInviteEmail("");      // Clear the input
             setShowInvite(false);    // Hide the invite form
         } catch (err: any) {
-            addToast(err?.message || "Failed to send invitation", "error");
+            // Map specific HTTP statuses to user-friendly messages
+            const status = err?.status;
+            let msg: string;
+            if (status === 404) {
+                msg = `No user found with email "${inviteEmail.trim()}" — they need to register first`;
+            } else if (status === 409) {
+                msg = "This user is already a teammate on this project";
+            } else if (status === 403) {
+                msg = "Only the project owner can invite teammates";
+            } else if (status === 400) {
+                msg = err?.message || "Invalid invitation request";
+            } else {
+                msg = err?.message || "Failed to send invitation";
+            }
+            addToast(msg, "error");
         } finally {
             setInviting(false);
         }

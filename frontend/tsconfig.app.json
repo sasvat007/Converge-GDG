@@ -1,28 +1,81 @@
+// ============================================================================
+// tsconfig.app.json — TypeScript Compiler Options for the App Source Code
+// ============================================================================
+//
+// WHAT IS TYPESCRIPT?
+// TypeScript = JavaScript + static types. You declare what type a variable,
+// function parameter, or return value should be (string, number, MyInterface, etc.).
+// The TS compiler checks these types BEFORE runtime, catching bugs early.
+//
+// WHAT IS THIS FILE?
+// This tells the TypeScript compiler HOW to process files inside the `src/` folder.
+// The parent `tsconfig.json` references this file (and tsconfig.node.json for
+// build-tool config). The separation keeps app code settings apart from tooling settings.
+//
+// NOTE: In a Vite project, TypeScript does NOT produce output JS files.
+// Vite handles the actual compilation. TypeScript is only used for type-checking.
+// ============================================================================
 {
   "compilerOptions": {
+    // Where to store incremental build info (speeds up repeated type-checks)
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+
+    // Target ES2022 — the JS version the compiler assumes your code targets.
+    // Modern browsers support ES2022, so we can use features like top-level await.
     "target": "ES2022",
+
+    // Aligns class field behaviour with the TC39 standard (modern JS spec)
     "useDefineForClassFields": true,
+
+    // Which built-in type definitions to include:
+    //   ES2022 — JS language features (Map, Promise, Array methods, etc.)
+    //   DOM    — Browser APIs (document, window, fetch, HTMLElement, etc.)
+    //   DOM.Iterable — Makes DOM collections (NodeList, etc.) iterable with for...of
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
+
+    // Module system: ESNext = use modern import/export syntax
     "module": "ESNext",
+
+    // Tells TS about Vite-specific types (e.g., import.meta.env for env variables)
     "types": ["vite/client"],
+
+    // Skip type-checking inside node_modules (much faster compilation)
     "skipLibCheck": true,
 
-    /* Bundler mode */
+    /* ---- Bundler mode ---- */
+    // These settings tell TS: "Vite (the bundler) will handle module resolution,
+    // not the TS compiler." This avoids conflicts between TS and Vite.
+
+    // Use bundler-style module resolution (matches how Vite resolves imports)
     "moduleResolution": "bundler",
+
+    // Allow importing .ts/.tsx files with their extension (e.g., import './App.tsx')
     "allowImportingTsExtensions": true,
+
+    // Preserve import/export syntax exactly as written (Vite needs this)
     "verbatimModuleSyntax": true,
+
+    // Treat every file as a module (even without import/export statements)
     "moduleDetection": "force",
+
+    // Don't produce output JS files — Vite does the compilation, TS only type-checks
     "noEmit": true,
+
+    // Enable JSX support using React's automatic runtime
+    // This means you DON'T need to write `import React from 'react'` in every file
+    // The compiler auto-injects the necessary React import
     "jsx": "react-jsx",
 
-    /* Linting */
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    /* ---- Linting ---- */
+    // These make TypeScript stricter, catching more potential bugs:
+
+    "strict": true,                       // Enable all strict type-checking options
+    "noUnusedLocals": true,               // Error if you declare a variable but never use it
+    "noUnusedParameters": true,           // Error if a function parameter is never used
+    "erasableSyntaxOnly": true,           // Only allow TS syntax that can be erased to produce valid JS
+    "noFallthroughCasesInSwitch": true,   // Error if a switch case falls through without break/return
+    "noUncheckedSideEffectImports": true  // Ensure side-effect imports are explicitly marked
   },
+  // Only type-check files inside the src/ directory
   "include": ["src"]
 }

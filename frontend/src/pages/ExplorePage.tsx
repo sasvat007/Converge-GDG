@@ -1,22 +1,42 @@
+// ============================================================================
+// src/pages/ExplorePage.tsx — Explore/Discover Public Projects
+// ============================================================================
+//
+// This page shows ALL public projects from all users (not just your own).
+// Users can search by title/description/skills and filter by project type.
+//
+// PATTERNS IN THIS FILE:
+//   • Client-side filtering — Instead of re-fetching from the API with each
+//     search/filter change, we load all projects once and filter in JS.
+//     This is fine for small datasets but wouldn't scale to millions of records.
+//   • Controlled search input — The search query is stored in React state
+//   • Filter chips — Buttons that toggle a filter selection
+// ============================================================================
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { exploreProjects } from "../api/client";
 import type { Project } from "../types";
 import { Search, Clock, Compass } from "lucide-react";
 
+// ---- CONSTANTS ----
+// Project type filter options. Defined outside the component so they're created
+// once and reused (not recreated on every render).
 const TYPES = ["All", "Software Development", "Research", "Design", "Other"];
 
 export default function ExplorePage() {
-    const [projects, setProjects] = useState<Project[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [search, setSearch] = useState("");
-    const [typeFilter, setTypeFilter] = useState("All");
+    // ---- STATE ----
+    const [projects, setProjects] = useState<Project[]>([]);    // All projects from API
+    const [loading, setLoading] = useState(true);               // Loading indicator
+    const [search, setSearch] = useState("");                   // Search query text
+    const [typeFilter, setTypeFilter] = useState("All");        // Active type filter
     const navigate = useNavigate();
 
+    // ---- FETCH ALL PUBLIC PROJECTS ON MOUNT ----
     useEffect(() => {
         exploreProjects()
             .then((p) => setProjects(p as unknown as Project[]))
-            .catch(() => { })
+            .catch(() => { })           // Silently handle errors
             .finally(() => setLoading(false));
     }, []);
 
@@ -28,13 +48,23 @@ export default function ExplorePage() {
         );
     }
 
+    // ---- CLIENT-SIDE FILTERING ----
+    // This runs on every render (whenever `search` or `typeFilter` state changes).
+    // .filter() returns a NEW array with only the items that pass both conditions.
     const filtered = projects.filter((p) => {
+        // Search filter: check if the query appears in title, description, or skills
+        // .toLowerCase() makes the search case-insensitive
+        // `!search` means "if search is empty, match everything"
         const matchSearch =
             !search ||
             p.title.toLowerCase().includes(search.toLowerCase()) ||
             p.description?.toLowerCase().includes(search.toLowerCase()) ||
             p.requiredSkills?.toLowerCase().includes(search.toLowerCase());
+
+        // Type filter: "All" matches everything, otherwise must match exactly
         const matchType = typeFilter === "All" || p.type === typeFilter;
+
+        // Both conditions must be true for the project to appear
         return matchSearch && matchType;
     });
 
@@ -45,6 +75,8 @@ export default function ExplorePage() {
                 <p>Discover projects that match your skills and interests</p>
             </div>
 
+            {/* ---- SEARCH BAR ---- */}
+            {/* The Search icon and input are styled together via the .search-bar class */}
             <div className="search-bar">
                 <Search />
                 <input
@@ -53,13 +85,18 @@ export default function ExplorePage() {
                     placeholder="Search by title, description, or skills…"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
+                    // Every keystroke updates the `search` state, which triggers a re-render,
+                    // which re-runs the filter above, updating the displayed projects instantly.
                 />
             </div>
 
+            {/* ---- FILTER CHIPS ---- */}
+            {/* A row of buttons. Clicking one sets it as the active filter. */}
             <div className="filter-bar">
                 {TYPES.map((t) => (
                     <button
                         key={t}
+                        // Dynamic class: adds "active" class to the currently selected filter
                         className={`filter-chip ${typeFilter === t ? "active" : ""}`}
                         onClick={() => setTypeFilter(t)}
                     >
@@ -68,13 +105,16 @@ export default function ExplorePage() {
                 ))}
             </div>
 
+            {/* ---- RESULTS ---- */}
             {filtered.length === 0 ? (
+                // Empty state when no projects match the search/filter
                 <div className="empty-state">
                     <Compass />
                     <h3>No projects found</h3>
                     <p>Try adjusting your search or filters</p>
                 </div>
             ) : (
+                // Project cards grid — same pattern as DashboardPage
                 <div className="projects-grid">
                     {filtered.map((p, i) => (
                         <div
@@ -104,9 +144,11 @@ export default function ExplorePage() {
                                 </div>
                                 <div style={{ display: "flex", gap: "0.375rem" }}>
                                     <span className="badge badge-accent">{p.type}</span>
+                                    {/* Show domain badge only if the project has a domain */}
                                     {p.domain && (
                                         <span className="badge badge-info">
                                             {p.domain.split(",")[0]}
+                                            {/* Show only the first domain if there are multiple */}
                                         </span>
                                     )}
                                 </div>

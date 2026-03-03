@@ -135,6 +135,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         //   fetchProfile uses `token` but we intentionally only want to depend on [token].
     }, [token]);
 
+    // ---- useEffect: SYNC WITH LOCALSTORAGE ----
+    // When the token is deleted via DevTools or another tab, sync React state.
+    // 'storage' fires cross-tab; the 'focus' listener catches same-tab DevTools edits.
+    useEffect(() => {
+        const syncToken = () => {
+            const stored = localStorage.getItem("token");
+            if (!stored && token) {
+                setToken(null);
+                setProfile(null);
+            }
+        };
+
+        // Cross-tab: fires when another tab/window modifies localStorage
+        window.addEventListener("storage", syncToken);
+        // Same-tab: fires when user switches back to the app after editing DevTools
+        window.addEventListener("focus", syncToken);
+
+        return () => {
+            window.removeEventListener("storage", syncToken);
+            window.removeEventListener("focus", syncToken);
+        };
+    }, [token]);
+
     // ---- LOGIN FUNCTION ----
     // Called after successful API login. Stores token in both:
     //   1. localStorage (persists across page refreshes / browser restarts)

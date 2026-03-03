@@ -88,11 +88,6 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("message", "User already exists"));
         }
-        if (resumeText == null || resumeText.isBlank()) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("message", "resumeText is required"));
-        }
-
         // --- create user ---
         User user = new User();
         user.setEmail(email);
@@ -102,7 +97,10 @@ public class AuthController {
         // --- parse resume & build profile ---
         JsonData savedProfile;
         try {
-            String parsedJson = chatBotService.convertJSON(resumeText);
+            // If resumeText is provided, parse it via AI; otherwise use empty JSON
+            String parsedJson = (resumeText != null && !resumeText.isBlank())
+                    ? chatBotService.convertJSON(resumeText)
+                    : "{}";
             byte[] pdfBytes = decodePdf(resumePdf64);
 
             savedProfile = chatBotService.saveJsonForEmail(

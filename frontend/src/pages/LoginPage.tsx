@@ -98,8 +98,13 @@ export default function LoginPage() {
     // ---- JSX (THE UI) ----
     return (
         <div className="auth-layout bg-doodle">
-            {/* Background elements (purely decorative) */}
-            <div className="absolute inset-0 z-0 opacity-[0.05] pointer-events-none bg-[url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&amp;w=2670&amp;auto=format&amp;fit=crop')] bg-cover bg-center mix-blend-multiply dark:mix-blend-overlay"></div>
+            {/* Blurred background image of students & teachers collaborating */}
+            <img
+                src="/login-bg.png"
+                alt=""
+                aria-hidden="true"
+                className="auth-bg-image"
+            />
 
             <div className="auth-container" style={{ maxWidth: 480 }}>
                 <div className="auth-card-inner" style={{ minHeight: 'auto' }}>

@@ -45,7 +45,6 @@ export default function RegisterPage() {
         department: "",
         institution: "",
         availability: "medium",  // Default value
-        resumeText: "",
     });
 
     const [pdfFile, setPdfFile] = useState<File | null>(null);  // Selected PDF file
@@ -95,8 +94,12 @@ export default function RegisterPage() {
         e.preventDefault();
 
         // Client-side validation
-        if (!form.email || !form.password || !form.resumeText) {
-            addToast("Email, password and resume text are required", "error");
+        if (!form.email || !form.password) {
+            addToast("Email and password are required", "error");
+            return;
+        }
+        if (!pdfFile) {
+            addToast("Please upload your resume PDF", "error");
             return;
         }
 
@@ -130,10 +133,10 @@ export default function RegisterPage() {
         <div className="auth-layout bg-doodle">
             <div className="absolute inset-0 z-0 opacity-[0.05] pointer-events-none bg-[url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&amp;w=2670&amp;auto=format&amp;fit=crop')] bg-cover bg-center mix-blend-multiply dark:mix-blend-overlay"></div>
 
-            <div className="auth-container">
-                <div className="auth-card-inner">
-                    <div className="auth-left">
-                        <div className="auth-card animate-fade-in" style={{ maxWidth: 480 }}>
+            <div className="auth-container" style={{ maxWidth: 540 }}>
+                <div className="auth-card-inner" style={{ minHeight: 'auto' }}>
+                    <div className="auth-left" style={{ width: '100%', padding: '2.5rem' }}>
+                        <div className="auth-card animate-fade-in" style={{ maxWidth: '100%' }}>
                             <h1>Join Converge</h1>
                             <p className="subtitle">Create your profile and start finding collaborators</p>
 
@@ -146,7 +149,6 @@ export default function RegisterPage() {
                                         <input
                                             id="reg-name"
                                             className="form-input"
-                                            placeholder="John Doe"
                                             value={form.name}
                                             onChange={(e) => set("name", e.target.value)}
                                         />
@@ -157,7 +159,6 @@ export default function RegisterPage() {
                                             id="reg-email"
                                             className="form-input"
                                             type="email"
-                                            placeholder="you@university.edu"
                                             value={form.email}
                                             onChange={(e) => set("email", e.target.value)}
                                             required  // HTML5 validation — browser shows error if empty on submit
@@ -219,7 +220,7 @@ export default function RegisterPage() {
                                         <input
                                             id="reg-institution"
                                             className="form-input"
-                                            placeholder="MIT"
+                                            placeholder="SNU"
                                             value={form.institution}
                                             onChange={(e) => set("institution", e.target.value)}
                                         />
@@ -232,6 +233,7 @@ export default function RegisterPage() {
                                             value={form.availability}
                                             onChange={(e) => set("availability", e.target.value)}
                                         >
+                                            <option value="">Select availability</option>
                                             <option value="low">Low</option>
                                             <option value="medium">Medium</option>
                                             <option value="high">High</option>
@@ -239,23 +241,9 @@ export default function RegisterPage() {
                                     </div>
                                 </div>
 
-                                {/* ---- Resume Text (required) ---- */}
+                                {/* ---- Resume PDF Upload (required) ---- */}
                                 <div className="form-group">
-                                    <label className="form-label" htmlFor="reg-resume">Resume Text *</label>
-                                    <textarea
-                                        id="reg-resume"
-                                        className="form-textarea"
-                                        placeholder="Paste your resume content here..."
-                                        value={form.resumeText}
-                                        onChange={(e) => set("resumeText", e.target.value)}
-                                        rows={2}
-                                        required
-                                    />
-                                </div>
-
-                                {/* ---- Resume PDF Upload (optional) ---- */}
-                                <div className="form-group">
-                                    <label className="form-label">Resume PDF (optional)</label>
+                                    <label className="form-label">Resume PDF *</label>
                                     <div
                                         className={`file-drop-zone ${dragOver ? "drag-active" : ""}`}
                                         onClick={() => fileRef.current?.click()}
@@ -285,20 +273,6 @@ export default function RegisterPage() {
 
                             <p className="auth-switch">
                                 Already have an account? <Link to="/login">Sign in</Link>
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* RIGHT PANEL — Marketing / Matchups */}
-                    <div className="auth-right">
-                        <div className="absolute inset-0 z-0 opacity-[0.08] bg-[url('https://images.unsplash.com/photo-1531403009284-440f080d1e12?q=80&amp;w=2670&amp;auto=format&amp;fit=crop')] bg-cover bg-center grayscale mix-blend-multiply"></div>
-                        <div className="auth-hero-text">
-                            <div className="inline-flex items-center justify-center p-3 bg-[var(--bg-card)] rounded-full shadow-lg mb-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" x2="19" y1="8" y2="14" /><line x1="22" x2="16" y1="11" y2="11" /></svg>
-                            </div>
-                            <h2>Build Together, Grow Together</h2>
-                            <p>
-                                Upload your resume, let AI parse your skills, and find the perfect teammates for your next big project.
                             </p>
                         </div>
                     </div>

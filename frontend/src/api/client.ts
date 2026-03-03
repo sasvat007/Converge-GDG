@@ -121,8 +121,8 @@ export function fileToBase64(file: File): Promise<string> {
 
 /**
  * POST /auth/register
- * Creates a new user account. Sends profile details + resume text to the backend.
- * The backend parses the resume with AI and returns a JWT token.
+ * Creates a new user account. Sends profile details + resume PDF to the backend.
+ * The backend parses the PDF with AI and returns a JWT token.
  *
  * @param body - Registration form data
  * @returns { token, message, profile? } — the JWT token to store for future requests
@@ -130,7 +130,6 @@ export function fileToBase64(file: File): Promise<string> {
 export async function register(body: {
     email: string;
     password: string;
-    resumeText: string;
     resumePdf?: string | null;  // Optional base64-encoded PDF
     name?: string;
     year?: string;
@@ -201,7 +200,7 @@ export async function uploadResume(body: Record<string, unknown>) {
  * PUT /api/resume/update
  * Updates the current user's resume (text and/or PDF).
  */
-export async function updateResume(body: { resumeText?: string; resumePdf?: string }) {
+export async function updateResume(body: { resumePdf?: string }) {
     const res = await fetch(`${BASE}/api/resume/update`, {
         method: "PUT",
         headers: authHeaders(),

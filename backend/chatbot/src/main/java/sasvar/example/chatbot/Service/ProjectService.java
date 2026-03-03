@@ -105,7 +105,7 @@ public class ProjectService {
     }
 
     public List<ProjectData> listAllProjects() {
-        return projectRepository.findAll();
+        return projectRepository.findAllByVisibilityIgnoreCase("public");
     }
 
     /* ------------------------------------------------------------------ */

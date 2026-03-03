@@ -18,12 +18,13 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
-import { resumeDownloadUrl } from "../api/client";
+
 import type { ParsedResume } from "../types";
 import {
     GraduationCap, Building2, Clock, Download, Code,
     Lightbulb, Trophy, Briefcase, Target,
 } from "lucide-react";
+import { resumeDownloadUrl } from "../api/client";
 
 export default function ProfilePage() {
     const { profile } = useAuth();     // Current user's profile from AuthContext
@@ -31,6 +32,35 @@ export default function ProfilePage() {
 
     // Parsed resume data — starts as null, populated from profile.Resume JSON string
     const [resume, setResume] = useState<ParsedResume | null>(null);
+    const [downloading, setDownloading] = useState(false);
+
+    // ---- AUTHENTICATED RESUME DOWNLOAD ----
+    // We can't use a plain <a href> because the browser won't send the JWT.
+    // Instead, fetch the PDF with auth headers and trigger a blob download.
+    const handleDownload = async () => {
+        if (!profile?.id) return;
+        setDownloading(true);
+        try {
+            const token = localStorage.getItem("token");
+            const res = await fetch(resumeDownloadUrl(profile.id), {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
+            if (!res.ok) throw new Error("Download failed");
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `resume_${profile.id}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        } catch {
+            addToast("Could not download resume", "error");
+        } finally {
+            setDownloading(false);
+        }
+    };
 
     // ---- PARSE RESUME DATA ----
     // When `profile` changes (or on first render), try to parse the Resume JSON string.
@@ -80,7 +110,9 @@ export default function ProfilePage() {
             {/* HERO SECTION — Avatar, name, email, metadata, download link   */}
             {/* ============================================================= */}
             <div className="profile-hero">
-                {/* Large avatar circle with initials */}
+                {/* Gradient banner background */}
+                <div className="profile-hero-banner" />
+                {/* Large avatar circle with initials — overlaps the banner */}
                 <div className="profile-avatar-lg">{initials}</div>
                 <div className="profile-info">
                     <h2>{profile.name || "Unknown"}</h2>
@@ -88,9 +120,9 @@ export default function ProfilePage() {
 
                     {/* Metadata chips — only render if the field has a value */}
                     <div className="profile-meta">
-                        {profile.department && <span className="profile-meta-item"><GraduationCap size={14} />{profile.department}</span>}
-                        {profile.year && <span className="profile-meta-item"><Clock size={14} />{profile.year}</span>}
-                        {profile.institution && <span className="profile-meta-item"><Building2 size={14} />{profile.institution}</span>}
+                        {profile.department && <span className="profile-meta-item"><GraduationCap size={15} />{profile.department}</span>}
+                        {profile.year && <span className="profile-meta-item"><Clock size={15} />{profile.year}</span>}
+                        {profile.institution && <span className="profile-meta-item"><Building2 size={15} />{profile.institution}</span>}
                         {/* Availability badge — different colour based on level */}
                         {profile.availability && (
                             <span className={`badge ${profile.availability === "high" ? "badge-success" : profile.availability === "medium" ? "badge-warning" : "badge-danger"}`}>
@@ -100,11 +132,12 @@ export default function ProfilePage() {
                     </div>
 
                     {/* Download resume link — opens in a new tab */}
-                    {/* resumeDownloadUrl(id) returns a URL string like "/api/resume/download/42" */}
                     {profile.id && (
-                        <a href={resumeDownloadUrl(profile.id)} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm" style={{ marginTop: "0.75rem" }}>
-                            <Download size={14} /> Download Resume
-                        </a>
+                        <div className="profile-actions">
+                            <button onClick={handleDownload} disabled={downloading} className="btn btn-secondary btn-sm">
+                                <Download size={14} /> {downloading ? "Downloading…" : "Download Resume"}
+                            </button>
+                        </div>
                     )}
                 </div>
             </div>

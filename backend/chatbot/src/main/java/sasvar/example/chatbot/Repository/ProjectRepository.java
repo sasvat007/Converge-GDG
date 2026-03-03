@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface ProjectRepository extends JpaRepository<ProjectData, Long> {
     List<ProjectData> findAllByEmail(String email);
+    List<ProjectData> findAllByVisibilityIgnoreCase(String visibility);
 }

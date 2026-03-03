@@ -18,7 +18,7 @@
 //   • Controlled inputs — Input values are tied to React state (not DOM state)
 // ============================================================================
 
-import React, { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 // FormEvent is a TypeScript TYPE import (not runtime code).
 // It types the `e` parameter in handleSubmit so you get autocomplete on e.preventDefault(), etc.
 
@@ -101,11 +101,11 @@ export default function LoginPage() {
             {/* Background elements (purely decorative) */}
             <div className="absolute inset-0 z-0 opacity-[0.05] pointer-events-none bg-[url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&amp;w=2670&amp;auto=format&amp;fit=crop')] bg-cover bg-center mix-blend-multiply dark:mix-blend-overlay"></div>
 
-            <div className="auth-container">
-                <div className="auth-card-inner">
+            <div className="auth-container" style={{ maxWidth: 480 }}>
+                <div className="auth-card-inner" style={{ minHeight: 'auto' }}>
                     {/* LEFT PANEL — Login form */}
-                    <div className="auth-left">
-                        <div className="auth-card animate-fade-in">
+                    <div className="auth-left" style={{ width: '100%', padding: '2.5rem' }}>
+                        <div className="auth-card animate-fade-in" style={{ maxWidth: '100%' }}>
                             <h1>Converge</h1>
                             <p className="subtitle">Where ideas meet collaborators.</p>
 
@@ -117,7 +117,7 @@ export default function LoginPage() {
                                             id="login-email"
                                             className="form-input"
                                             type="email"
-                                            placeholder="student@university.edu"
+                                            placeholder="student@snuchennai.edu.in"
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
                                             autoComplete="email"
@@ -134,7 +134,7 @@ export default function LoginPage() {
                                             id="login-password"
                                             className="form-input"
                                             type="password"
-                                            placeholder="Your secret key"
+                                            placeholder="Enter password"
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
                                             autoComplete="current-password"
@@ -145,7 +145,7 @@ export default function LoginPage() {
                                     </div>
                                 </div>
                                 <button className="btn btn-primary" type="submit" disabled={busy}>
-                                    <span>{busy ? "Signing in…" : "Join the Lab"}</span>
+                                    <span>{busy ? "Signing in…" : "Sign in"}</span>
                                     <LogIn size={20} />
                                 </button>
                             </form>
@@ -153,72 +153,6 @@ export default function LoginPage() {
                             <p className="auth-switch">
                                 Don't have an account? <Link to="/register">Sign up here</Link>
                             </p>
-                        </div>
-                    </div>
-
-                    {/* RIGHT PANEL — Marketing / Matchups */}
-                    <div className="auth-right">
-                        <div className="absolute inset-0 z-0 opacity-[0.08] bg-[url('https://images.unsplash.com/photo-1531403009284-440f080d1e12?q=80&amp;w=2670&amp;auto=format&amp;fit=crop')] bg-cover bg-center grayscale mix-blend-multiply"></div>
-                        <div className="auth-hero-text">
-                            <div className="inline-flex items-center justify-center p-3 bg-[var(--bg-card)] rounded-full shadow-lg mb-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m11 17 2 2a1 1 0 1 0 3-3" /><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4" /><path d="m21 3 1 11h-2" /><path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3" /><path d="M3 4h8" /></svg>
-                            </div>
-                            <h2>Latest Matchups</h2>
-                            <p>Real-time collaboration activity</p>
-
-                            {/* Ticker Container */}
-                            <div className="matchups-container">
-                                <div className="matchups-gradient-top"></div>
-                                <div className="matchups-gradient-bottom"></div>
-
-                                <div className="animate-scroll-vertical">
-                                    {/* Duplicated list for seamless scrolling */}
-                                    {[1, 2].map((group) => (
-                                        <React.Fragment key={group}>
-                                            <div className="matchup-item">
-                                                <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80" alt="Avatar" />
-                                                <div className="matchup-info">
-                                                    <p className="name">Robotics Team</p>
-                                                    <p className="time">Matched 2m ago</p>
-                                                </div>
-                                                <div className="matchup-icon">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
-                                                </div>
-                                            </div>
-                                            <div className="matchup-item">
-                                                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80" alt="Avatar" />
-                                                <div className="matchup-info">
-                                                    <p className="name">UX Research</p>
-                                                    <p className="time">Matched 5m ago</p>
-                                                </div>
-                                                <div className="matchup-icon">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
-                                                </div>
-                                            </div>
-                                            <div className="matchup-item">
-                                                <img src="https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&w=100&q=80" alt="Avatar" />
-                                                <div className="matchup-info">
-                                                    <p className="name">BioTech Lab</p>
-                                                    <p className="time">Matched 12m ago</p>
-                                                </div>
-                                                <div className="matchup-icon">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
-                                                </div>
-                                            </div>
-                                            <div className="matchup-item">
-                                                <img src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&w=100&q=80" alt="Avatar" />
-                                                <div className="matchup-info">
-                                                    <p className="name">Film Study Group</p>
-                                                    <p className="time">Matched 24m ago</p>
-                                                </div>
-                                                <div className="matchup-icon">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
-                                                </div>
-                                            </div>
-                                        </React.Fragment>
-                                    ))}
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>

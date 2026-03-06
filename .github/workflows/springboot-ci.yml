@@ -61,7 +61,7 @@ jobs:
           cache: maven
 
       - name: Run Tests
-        working-directory: backend
+        working-directory: backend/chatbot
         run: mvn test
 
   build:
@@ -81,12 +81,12 @@ jobs:
           cache: maven
 
       - name: Build JAR
-        working-directory: backend
+        working-directory: backend/chatbot
         run: mvn -B package
 
       - name: Upload JAR artifact
         uses: actions/upload-artifact@v4
         with:
           name: backend-build-${{ github.sha }}
-          path: backend/target/*.jar
+          path: backend/chatbot/target/*.jar
           retention-days: 30

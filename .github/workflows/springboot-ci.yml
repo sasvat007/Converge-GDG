@@ -1,0 +1,92 @@
+name: Spring Boot Backend CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/springboot-ci.yml'
+
+  format:
+    name: Java Format Check
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Check Java formatting
+        run: |
+          curl -L https://github.com/google/google-java-format/releases/download/v1.23.0/google-java-format-1.23.0-all-deps.jar -o gjf.jar
+          find backend -name "*.java" | xargs java -jar gjf.jar --dry-run --set-exit-if-changed
+
+  test:
+    name: Run Tests
+    needs: [changes, format]
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: Run Tests
+        working-directory: backend/chatbot
+        run: mvn test
+
+  build:
+    name: Build JAR
+    needs: [changes, test]
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: Build JAR
+        working-directory: backend/chatbot
+        run: mvn -B package
+
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-build-${{ github.sha }}
+          path: backend/chatbot/target/*.jar
+          retention-days: 30

@@ -18,18 +18,31 @@ public class JwtUtils {
     @Value("${jwt.secret:super-secret-key-123456-is-very-long-my-name-is-sasvat-converge-what}")
     private String secret;
 
-    @Value("${jwt.expiration-ms:86400000}") // default: 1 day
-    private long expirationMs;
+    @Value("${jwt.access-expiration-ms:900000}")
+    private long accessExpiration;
 
-    public String generateToken(String email) {
+    @Value("${jwt.refresh-expiration-ms:604800000}")
+    private long refreshExpiration;
+
+    //----------------- ACCESS TOKEN ------------
+    public String generateAccessToken(String email){
         return Jwts.builder()
                 .setSubject(email)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + expirationMs))
+                .setExpiration(new Date(System.currentTimeMillis() + accessExpiration))
                 .signWith(Keys.hmacShaKeyFor(secret.getBytes()), SignatureAlgorithm.HS256)
                 .compact();
     }
 
+    //----------------- REFRESH TOKEN ------------
+    public String generateRefreshToken(String email){
+        return Jwts.builder()
+                .setSubject(email)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + refreshExpiration))
+                .signWith(Keys.hmacShaKeyFor(secret.getBytes()), SignatureAlgorithm.HS256)
+                .compact();
+    }
     public String extractEmail(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(secret.getBytes())

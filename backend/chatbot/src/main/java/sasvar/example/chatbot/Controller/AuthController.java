@@ -118,11 +118,13 @@ public class AuthController {
 
         sendResumeBestEffort(savedProfile);
 
-        String token = jwtUtils.generateToken(user.getEmail());
+        String accessToken = jwtUtils.generateAccessToken(user.getEmail());
+        String refreshToken = jwtUtils.generateRefreshToken(user.getEmail());
 
         Map<String, Object> resp = new HashMap<>();
         resp.put("message", "Registered successfully");
-        resp.put("token", token);
+        resp.put("accessToken", accessToken);
+        resp.put("refreshToken", refreshToken);
         if (savedProfile != null) {
             resp.put("profile", buildProfileMap(savedProfile));
         }
@@ -163,10 +165,12 @@ public class AuthController {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Password mismatch");
         }
 
-        String token = jwtUtils.generateToken(user.getEmail());
+        String accessToken = jwtUtils.generateAccessToken(user.getEmail());
+        String refreshToken = jwtUtils.generateRefreshToken(user.getEmail());
 
         Map<String, Object> resp = new HashMap<>();
-        resp.put("token", token);
+        resp.put("accessToken", accessToken);
+        resp.put("refreshToken", refreshToken);
 
         JsonData profile = chatBotService.getProfileByEmail(email);
         if (profile != null) {
@@ -174,6 +178,48 @@ public class AuthController {
         }
 
         return ResponseEntity.ok(resp);
+    }
+
+    // --------------Refresh-------------
+
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refresh(@RequestBody Map<String, String> body) {
+
+        String refreshToken = body.get("refreshToken");
+
+        if (refreshToken == null || refreshToken.isBlank()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Refresh token required"));
+        }
+
+        try {
+
+            if (!jwtUtils.validateToken(refreshToken)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "Invalid refresh token"));
+            }
+
+            String email = jwtUtils.extractEmail(refreshToken);
+
+            String newAccessToken = jwtUtils.generateAccessToken(email);
+            String newRefreshToken = jwtUtils.generateRefreshToken(email);
+
+            Map<String, Object> resp = new HashMap<>();
+            resp.put("accessToken", newAccessToken);
+            resp.put("refreshToken", newRefreshToken);
+
+            JsonData profile = chatBotService.getProfileByEmail(email);
+            if (profile != null) {
+                resp.put("profile", buildProfileMap(profile));
+            }
+
+            return ResponseEntity.ok(resp);
+
+        } catch (Exception e) {
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Invalid or expired refresh token"));
+        }
     }
 
     /* ------------------------------------------------------------------ */

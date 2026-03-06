@@ -320,7 +320,7 @@ public class ChatBotService {
               ? Map.of("resume_id", profile.getId(), "resume_json", parsedJsonNode)
               : Map.of("parsed_json", parsedJsonNode);
 
-      postToDjango("http://localhost:31000/api/resume/json/", payload);
+      postToDjango("https://fundamentally-historiographic-leif.ngrok-free.dev/api/resume/json/", payload);
 
     } catch (Exception e) {
       log.warn("Failed to send resume JSON to Django ML service: {}", e.getMessage());
@@ -357,7 +357,7 @@ public class ChatBotService {
       Map<String, Object> payload =
           Map.of("project_id", project.getId(), "parsed_json", parsedJson);
 
-      postToDjango("http://localhost:31001/api/project/embed/", payload);
+      postToDjango("https://fundamentally-historiographic-leif.ngrok-free.dev/api/project/embed/", payload);
 
     } catch (Exception e) {
       log.warn("Failed to send project JSON to Django ML service: {}", e.getMessage());

@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Docs & tools
+API_DOCUMENTATION.md
+*.jar

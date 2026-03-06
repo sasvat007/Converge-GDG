@@ -24,3 +24,8 @@ dist-ssr
 *.sw?
 
 FRONTEND_REFERENCE.md
+
+# Environment variable files (may contain secrets / API keys)
+.env
+.env.production
+.env.staging

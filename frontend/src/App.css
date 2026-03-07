@@ -900,6 +900,14 @@
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  letter-spacing: -0.025em;
+  font-family: var(--font-sans);
+}
+
+@media (min-width: 768px) {
+  .auth-card h1 {
+    font-size: 3rem;
+  }
 }
 
 .auth-card-inner .auth-card p.subtitle {

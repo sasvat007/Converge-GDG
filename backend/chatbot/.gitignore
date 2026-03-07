@@ -32,5 +32,6 @@ build/
 ### VS Code ###
 .vscode/
 
-# Spring Boot config (sensitive)
-src/main/resources/application.properties
+# Docs & tools
+API_DOCUMENTATION.md
+*.jar

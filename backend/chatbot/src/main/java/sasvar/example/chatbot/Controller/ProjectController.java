@@ -8,6 +8,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.*;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -18,9 +20,6 @@ import sasvar.example.chatbot.Database.ProjectTeam;
 import sasvar.example.chatbot.Database.ProjectTeamRequest;
 import sasvar.example.chatbot.Service.ProjectService;
 import sasvar.example.chatbot.Service.ProjectTeamService;
-
-import java.util.*;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/projects")

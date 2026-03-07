@@ -7,6 +7,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,9 +22,6 @@ import sasvar.example.chatbot.Database.User;
 import sasvar.example.chatbot.Repository.UserRepository;
 import sasvar.example.chatbot.Service.ChatBotService;
 import sasvar.example.chatbot.Utils.JwtUtils;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -127,96 +126,72 @@ public class AuthController {
         return ResponseEntity.ok(resp);
     }
 
-    /* ------------------------------------------------------------------ */
-    /* POST /auth/login */
-    /* ------------------------------------------------------------------ */
+    User user =
+        userRepository
+            .findByEmail(email)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
-    @Operation(summary = "Login an existing user", description = "Authenticates using email/password and returns a JWT token along with the user profile.")
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Login credentials", required = true, content = @Content(mediaType = "application/json", schema = @Schema(implementation = Object.class), examples = @ExampleObject(value = """
-            {
-              "email": "user@example.com",
-              "password": "securePassword123"
-            }""")))
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Login successful; returns JWT token and profile"),
-            @ApiResponse(responseCode = "400", description = "Email or password missing"),
-            @ApiResponse(responseCode = "401", description = "Invalid credentials")
-    })
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
-
-        String email = body.get("email");
-        String password = body.get("password");
-
-        if (email == null || password == null) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("message", "Email and password required"));
-        }
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.UNAUTHORIZED, "User not found"));
-
-        if (!passwordEncoder.matches(password, user.getPassword())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Password mismatch");
-        }
-
-        String token = jwtUtils.generateToken(user.getEmail());
-
-        Map<String, Object> resp = new HashMap<>();
-        resp.put("token", token);
-
-        JsonData profile = chatBotService.getProfileByEmail(email);
-        if (profile != null) {
-            resp.put("profile", buildProfileMap(profile));
-        }
-
-        return ResponseEntity.ok(resp);
+    if (!passwordEncoder.matches(password, user.getPassword())) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Password mismatch");
     }
 
-    /* ------------------------------------------------------------------ */
-    /* Private helpers */
-    /* ------------------------------------------------------------------ */
+    String token = jwtUtils.generateToken(user.getEmail());
 
-    private Map<String, Object> buildProfileMap(JsonData data) {
-        Map<String, Object> map = new HashMap<>();
-        map.put("email", data.getEmail());
-        map.put("name", data.getName());
-        map.put("year", data.getYear());
-        map.put("department", data.getDepartment());
-        map.put("institution", data.getInstitution());
-        map.put("availability", data.getAvailability());
-        if (data.getResumePdf() != null) {
-            map.put("resumePdfUrl", "/api/resume/download/" + data.getId());
-        }
-        return map;
+    Map<String, Object> resp = new HashMap<>();
+    resp.put("token", token);
+
+    JsonData profile = chatBotService.getProfileByEmail(email);
+    if (profile != null) {
+      resp.put("profile", buildProfileMap(profile));
     }
 
-    private byte[] decodePdf(String base64) {
-        if (base64 == null || base64.isBlank()) {
-            return null;
-        }
-        try {
-            return java.util.Base64.getDecoder().decode(base64);
-        } catch (IllegalArgumentException ex) {
-            log.warn("Invalid base64 PDF: {}", ex.getMessage());
-            return null;
-        }
-    }
+    return ResponseEntity.ok(resp);
+  }
 
-    private void sendResumeBestEffort(JsonData profile) {
-        try {
-            chatBotService.sendResumeJson(profile);
-        } catch (Exception ex) {
-            log.warn("Best-effort resume sync failed: {}", ex.getMessage());
-        }
-    }
+  /* ------------------------------------------------------------------ */
+  /* Private helpers */
+  /* ------------------------------------------------------------------ */
 
-    private void safeDeleteUser(User user) {
-        try {
-            userRepository.delete(user);
-        } catch (Exception ex) {
-            log.warn("Failed to rollback user after registration error: {}", ex.getMessage());
-        }
+  private Map<String, Object> buildProfileMap(JsonData data) {
+    Map<String, Object> map = new HashMap<>();
+    map.put("email", data.getEmail());
+    map.put("name", data.getName());
+    map.put("year", data.getYear());
+    map.put("department", data.getDepartment());
+    map.put("institution", data.getInstitution());
+    map.put("availability", data.getAvailability());
+    if (data.getResumePdf() != null) {
+      map.put("resumePdfUrl", "/api/resume/download/" + data.getId());
     }
+    return map;
+  }
+
+  private byte[] decodePdf(String base64) {
+    if (base64 == null || base64.isBlank()) {
+      return null;
+    }
+    try {
+      return java.util.Base64.getDecoder().decode(base64);
+    } catch (IllegalArgumentException ex) {
+      log.warn("Invalid base64 PDF: {}", ex.getMessage());
+      return null;
+    }
+  }
+
+  private void sendResumeBestEffort(JsonData profile) {
+    try {
+      chatBotService.sendResumeJson(profile);
+    } catch (Exception ex) {
+      log.warn("Best-effort resume sync failed: {}", ex.getMessage());
+    }
+  }
+
+  private void safeDeleteUser(User user) {
+    try {
+      userRepository.delete(user);
+    } catch (Exception ex) {
+      log.warn("Failed to rollback user after registration error: {}", ex.getMessage());
+    }
+  }
 }

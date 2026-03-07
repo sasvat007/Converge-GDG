@@ -131,7 +131,13 @@ export default function RegisterPage() {
     // ---- JSX ----
     return (
         <div className="auth-layout bg-doodle">
-            <div className="absolute inset-0 z-0 opacity-[0.05] pointer-events-none bg-[url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&amp;w=2670&amp;auto=format&amp;fit=crop')] bg-cover bg-center mix-blend-multiply dark:mix-blend-overlay"></div>
+            {/* Blurred background image of students & teachers collaborating */}
+            <img
+                src="/register-bg.png"
+                alt=""
+                aria-hidden="true"
+                className="auth-bg-image"
+            />
 
             <div className="auth-container" style={{ maxWidth: 540 }}>
                 <div className="auth-card-inner" style={{ minHeight: 'auto' }}>

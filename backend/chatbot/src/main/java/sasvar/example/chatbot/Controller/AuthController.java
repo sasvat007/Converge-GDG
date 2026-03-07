@@ -29,160 +29,101 @@ import sasvar.example.chatbot.Utils.JwtUtils;
 @Tag(name = "Authentication", description = "User registration and login endpoints")
 public class AuthController {
 
-  private static final Logger log = LoggerFactory.getLogger(AuthController.class);
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
-  private final UserRepository userRepository;
-  private final PasswordEncoder passwordEncoder;
-  private final JwtUtils jwtUtils;
-  private final ChatBotService chatBotService;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtils jwtUtils;
+    private final ChatBotService chatBotService;
 
-  /* ------------------------------------------------------------------ */
-  /* POST /auth/register */
-  /* ------------------------------------------------------------------ */
+    /* ------------------------------------------------------------------ */
+    /* POST /auth/register */
+    /* ------------------------------------------------------------------ */
 
-  @Operation(
-      summary = "Register a new user",
-      description =
-          """
-          Creates a new user account with email/password credentials,
-          parses the supplied resume text via Gemini AI, and stores the
-          profile along with an optional PDF attachment. Returns a JWT
-          token on success.""")
-  @io.swagger.v3.oas.annotations.parameters.RequestBody(
-      description = "Registration payload",
-      required = true,
-      content =
-          @Content(
-              mediaType = "application/json",
-              schema = @Schema(implementation = Object.class),
-              examples =
-                  @ExampleObject(
-                      value =
-                          """
-                          {
-                            "email": "user@example.com",
-                            "password": "securePassword123",
-                            "resumeText": "John Doe, Software Engineer at XYZ...",
-                            "resumePdf": "<base64-encoded-pdf>",
-                            "name": "John Doe",
-                            "year": "3rd Year",
-                            "department": "Computer Science",
-                            "institution": "MIT",
-                            "availability": "high"
-                          }""")))
-  @ApiResponses({
-    @ApiResponse(
-        responseCode = "200",
-        description = "Registered successfully; returns JWT token and profile"),
-    @ApiResponse(
-        responseCode = "400",
-        description = "Missing required fields (email, password, or resumeText)"),
-    @ApiResponse(responseCode = "409", description = "User with the given email already exists"),
-    @ApiResponse(
-        responseCode = "500",
-        description = "Internal error during resume parsing or DB save")
-  })
-  @PostMapping(path = "/register", consumes = "application/json")
-  public ResponseEntity<?> register(@RequestBody Map<String, Object> body) {
+    @Operation(summary = "Register a new user", description = """
+            Creates a new user account with email/password credentials,
+            parses the supplied resume text via Gemini AI, and stores the
+            profile along with an optional PDF attachment. Returns a JWT
+            token on success.""")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Registration payload", required = true, content = @Content(mediaType = "application/json", schema = @Schema(implementation = Object.class), examples = @ExampleObject(value = """
+            {
+              "email": "user@example.com",
+              "password": "securePassword123",
+              "resumeText": "John Doe, Software Engineer at XYZ...",
+              "resumePdf": "<base64-encoded-pdf>",
+              "name": "John Doe",
+              "year": "3rd Year",
+              "department": "Computer Science",
+              "institution": "MIT",
+              "availability": "high"
+            }""")))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Registered successfully; returns JWT token and profile"),
+            @ApiResponse(responseCode = "400", description = "Missing required fields (email, password, or resumeText)"),
+            @ApiResponse(responseCode = "409", description = "User with the given email already exists"),
+            @ApiResponse(responseCode = "500", description = "Internal error during resume parsing or DB save")
+    })
+    @PostMapping(path = "/register", consumes = "application/json")
+    public ResponseEntity<?> register(@RequestBody Map<String, Object> body) {
 
-    String email = (String) body.getOrDefault("email", "");
-    String password = (String) body.getOrDefault("password", "");
-    String resumeText =
-        (String) body.getOrDefault("resumeText", body.getOrDefault("resume_text", ""));
-    String resumePdf64 =
-        (String) body.getOrDefault("resumePdf", body.getOrDefault("resume_pdf", ""));
-    String name = (String) body.getOrDefault("name", null);
-    String year = (String) body.getOrDefault("year", null);
-    String department = (String) body.getOrDefault("department", null);
-    String institution = (String) body.getOrDefault("institution", null);
-    String availability = (String) body.getOrDefault("availability", null);
+        String email = (String) body.getOrDefault("email", "");
+        String password = (String) body.getOrDefault("password", "");
+        String resumeText = (String) body.getOrDefault("resumeText",
+                body.getOrDefault("resume_text", ""));
+        String resumePdf64 = (String) body.getOrDefault("resumePdf",
+                body.getOrDefault("resume_pdf", ""));
+        String name = (String) body.getOrDefault("name", null);
+        String year = (String) body.getOrDefault("year", null);
+        String department = (String) body.getOrDefault("department", null);
+        String institution = (String) body.getOrDefault("institution", null);
+        String availability = (String) body.getOrDefault("availability", null);
 
-    // --- validation ---
-    if (email == null || email.isBlank() || password == null || password.isBlank()) {
-      return ResponseEntity.badRequest().body(Map.of("message", "Email and password required"));
-    }
-    if (userRepository.findByEmail(email).isPresent()) {
-      return ResponseEntity.status(HttpStatus.CONFLICT)
-          .body(Map.of("message", "User already exists"));
-    }
-    // --- create user ---
-    User user = new User();
-    user.setEmail(email);
-    user.setPassword(passwordEncoder.encode(password));
-    userRepository.save(user);
+        // --- validation ---
+        if (email == null || email.isBlank() || password == null || password.isBlank()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Email and password required"));
+        }
+        if (userRepository.findByEmail(email).isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("message", "User already exists"));
+        }
+        // --- create user ---
+        User user = new User();
+        user.setEmail(email);
+        user.setPassword(passwordEncoder.encode(password));
+        userRepository.save(user);
 
-    // --- parse resume & build profile ---
-    JsonData savedProfile;
-    try {
-      // If resumeText is provided, parse it via AI; otherwise use empty JSON
-      String parsedJson =
-          (resumeText != null && !resumeText.isBlank())
-              ? chatBotService.convertJSON(resumeText)
-              : "{}";
-      byte[] pdfBytes = decodePdf(resumePdf64);
+        // --- parse resume & build profile ---
+        JsonData savedProfile;
+        try {
+            // If resumeText is provided, parse it via AI; otherwise use empty JSON
+            String parsedJson = (resumeText != null && !resumeText.isBlank())
+                    ? chatBotService.convertJSON(resumeText)
+                    : "{}";
+            byte[] pdfBytes = decodePdf(resumePdf64);
 
-      savedProfile =
-          chatBotService.saveJsonForEmail(
-              parsedJson, email, name, year, department, institution, availability, pdfBytes);
+            savedProfile = chatBotService.saveJsonForEmail(
+                    parsedJson, email, name, year,
+                    department, institution, availability, pdfBytes);
 
-    } catch (Exception ex) {
-      log.error("Failed to parse/save resume during registration for {}", email, ex);
-      safeDeleteUser(user);
-      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-          .body(Map.of("message", "Failed to parse and save resume during registration"));
-    }
+        } catch (Exception ex) {
+            log.error("Failed to parse/save resume during registration for {}", email, ex);
+            safeDeleteUser(user);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Failed to parse and save resume during registration"));
+        }
 
-    sendResumeBestEffort(savedProfile);
+        sendResumeBestEffort(savedProfile);
 
-    String token = jwtUtils.generateToken(user.getEmail());
+        String token = jwtUtils.generateToken(user.getEmail());
 
-    Map<String, Object> resp = new HashMap<>();
-    resp.put("message", "Registered successfully");
-    resp.put("token", token);
-    if (savedProfile != null) {
-      resp.put("profile", buildProfileMap(savedProfile));
-    }
-    return ResponseEntity.ok(resp);
-  }
-
-  /* ------------------------------------------------------------------ */
-  /* POST /auth/login */
-  /* ------------------------------------------------------------------ */
-
-  @Operation(
-      summary = "Login an existing user",
-      description =
-          "Authenticates using email/password and returns a JWT token along with the user profile.")
-  @io.swagger.v3.oas.annotations.parameters.RequestBody(
-      description = "Login credentials",
-      required = true,
-      content =
-          @Content(
-              mediaType = "application/json",
-              schema = @Schema(implementation = Object.class),
-              examples =
-                  @ExampleObject(
-                      value =
-                          """
-                          {
-                            "email": "user@example.com",
-                            "password": "securePassword123"
-                          }""")))
-  @ApiResponses({
-    @ApiResponse(
-        responseCode = "200",
-        description = "Login successful; returns JWT token and profile"),
-    @ApiResponse(responseCode = "400", description = "Email or password missing"),
-    @ApiResponse(responseCode = "401", description = "Invalid credentials")
-  })
-  @PostMapping("/login")
-  public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
-
-    String email = body.get("email");
-    String password = body.get("password");
-
-    if (email == null || password == null) {
-      return ResponseEntity.badRequest().body(Map.of("message", "Email and password required"));
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("message", "Registered successfully");
+        resp.put("token", token);
+        if (savedProfile != null) {
+            resp.put("profile", buildProfileMap(savedProfile));
+        }
+        return ResponseEntity.ok(resp);
     }
 
     User user =

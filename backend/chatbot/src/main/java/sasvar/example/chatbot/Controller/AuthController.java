@@ -12,6 +12,7 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -35,6 +36,9 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
     private final ChatBotService chatBotService;
+
+    @Value("${admin.email:}")
+    private String adminEmail;
 
     /* ------------------------------------------------------------------ */
     /* POST /auth/register */
@@ -91,6 +95,9 @@ public class AuthController {
         User user = new User();
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(password));
+        if (adminEmail != null && !adminEmail.isBlank() && email.equalsIgnoreCase(adminEmail)) {
+            user.setRole("admin");
+        }
         userRepository.save(user);
 
         // --- parse resume & build profile ---
@@ -126,28 +133,43 @@ public class AuthController {
         return ResponseEntity.ok(resp);
     }
 
-    User user =
-        userRepository
-            .findByEmail(email)
-            .orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+    /* ------------------------------------------------------------------ */
+    /* POST /auth/login                                                   */
+    /* ------------------------------------------------------------------ */
 
-    if (!passwordEncoder.matches(password, user.getPassword())) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Password mismatch");
+    @Operation(summary = "Login", description = "Authenticates a user and returns a JWT token.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Login successful; returns JWT token and profile"),
+            @ApiResponse(responseCode = "401", description = "Invalid email or password")
+    })
+    @PostMapping(path = "/login", consumes = "application/json")
+    public ResponseEntity<?> login(@RequestBody Map<String, Object> body) {
+
+        String email = (String) body.getOrDefault("email", "");
+        String password = (String) body.getOrDefault("password", "");
+
+        User user =
+            userRepository
+                .findByEmail(email)
+                .orElseThrow(
+                    () -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Password mismatch");
+        }
+
+        String token = jwtUtils.generateToken(user.getEmail());
+
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("token", token);
+
+        JsonData profile = chatBotService.getProfileByEmail(email);
+        if (profile != null) {
+            resp.put("profile", buildProfileMap(profile));
+        }
+
+        return ResponseEntity.ok(resp);
     }
-
-    String token = jwtUtils.generateToken(user.getEmail());
-
-    Map<String, Object> resp = new HashMap<>();
-    resp.put("token", token);
-
-    JsonData profile = chatBotService.getProfileByEmail(email);
-    if (profile != null) {
-      resp.put("profile", buildProfileMap(profile));
-    }
-
-    return ResponseEntity.ok(resp);
-  }
 
   /* ------------------------------------------------------------------ */
   /* Private helpers */

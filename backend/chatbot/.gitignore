@@ -35,3 +35,6 @@ build/
 # Docs & tools
 API_DOCUMENTATION.md
 *.jar
+
+# Secrets – keep application-example.properties as the template
+src/main/resources/application.properties

@@ -29,3 +29,6 @@ FRONTEND_REFERENCE.md
 .env
 .env.production
 .env.staging
+
+# Tools
+*.jar

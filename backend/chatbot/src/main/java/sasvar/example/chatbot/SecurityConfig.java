@@ -41,6 +41,8 @@ public class SecurityConfig {
                     // Swagger UI & OpenAPI docs
                     .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**")
                     .permitAll()
+                    .requestMatchers("/api/admin/**")
+                    .hasRole("ADMIN")
                     .requestMatchers("/api/parse")
                     .authenticated()
                     .anyRequest()

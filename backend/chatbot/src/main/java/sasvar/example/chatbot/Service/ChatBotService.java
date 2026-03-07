@@ -142,23 +142,43 @@ public class ChatBotService {
 
     HttpEntity<String> request = new HttpEntity<>(body, headers);
 
-    try {
-      log.info("Calling Gemini API to parse resume ({} chars of text)", resumeText.length());
-      ResponseEntity<String> response =
-          restTemplate.postForEntity(String.format(GEMMA_URL, apiKey), request, String.class);
+    // Retry with exponential backoff to handle Gemini rate limits
+    int maxRetries = 3;
+    long backoffMs = 2000; // start at 2 seconds
 
-      log.info("Gemini API responded with status: {}", response.getStatusCode());
-      String result = extractGeminiReply(response.getBody());
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        log.info("Calling Gemini API to parse resume ({} chars, attempt {}/{})",
+            resumeText.length(), attempt, maxRetries);
+        ResponseEntity<String> response =
+            restTemplate.postForEntity(String.format(GEMMA_URL, apiKey), request, String.class);
 
-      // Validate JSON before returning
-      mapper.readTree(result);
-      log.info("Gemini resume parsing succeeded — {} chars of JSON", result.length());
-      return result;
+        log.info("Gemini API responded with status: {}", response.getStatusCode());
+        String result = extractGeminiReply(response.getBody());
 
-    } catch (Exception e) {
-      log.error("Gemini resume conversion FAILED: {}", e.getMessage(), e);
-      return "{}";
+        // Validate JSON before returning
+        mapper.readTree(result);
+        log.info("Gemini resume parsing succeeded — {} chars of JSON", result.length());
+        return result;
+
+      } catch (Exception e) {
+        log.warn("Gemini API attempt {}/{} failed: {}", attempt, maxRetries, e.getMessage());
+        if (attempt < maxRetries) {
+          try {
+            log.info("Retrying in {}ms...", backoffMs);
+            Thread.sleep(backoffMs);
+            backoffMs *= 2; // exponential backoff: 2s → 4s → 8s
+          } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            log.error("Retry interrupted");
+            return "{}";
+          }
+        } else {
+          log.error("Gemini resume conversion FAILED after {} attempts: {}", maxRetries, e.getMessage(), e);
+        }
+      }
     }
+    return "{}";
   }
 
   /* ------------------------------------------------------------------ */

@@ -64,12 +64,22 @@ public class ProjectService {
 
     ProjectData saved = projectRepository.save(project);
 
-    // Best-effort: send project JSON to Django ML
-    try {
-      chatBotService.sendProjectAndOwnerResume(saved);
-    } catch (Exception e) {
-      log.warn("Failed to sync project to Django ML: {}", e.getMessage());
-    }
+    // Add the creator as the first teammate
+    ProjectTeam ownerTeam = new ProjectTeam();
+    ownerTeam.setProjectId(saved.getId());
+    ownerTeam.setMemberEmail(email);
+    ownerTeam.setAddedAt(Instant.now().toString());
+    projectTeamRepository.save(ownerTeam);
+
+    // Best-effort: send project JSON to Django ML — run async so it doesn't block the response
+    final ProjectData projectForMl = saved;
+    new Thread(() -> {
+      try {
+        chatBotService.sendProjectAndOwnerResume(projectForMl);
+      } catch (Exception e) {
+        log.warn("Failed to sync project to Django ML: {}", e.getMessage());
+      }
+    }).start();
 
     return saved;
   }

@@ -30,11 +30,14 @@ public class ProjectController {
 
         private final ProjectService projectService;
         private final ProjectTeamService projectTeamService;
+        private final sasvar.example.chatbot.Service.ChatBotService chatBotService;
 
         public ProjectController(ProjectService projectService,
-                        ProjectTeamService projectTeamService) {
+                        ProjectTeamService projectTeamService,
+                        sasvar.example.chatbot.Service.ChatBotService chatBotService) {
                 this.projectService = projectService;
                 this.projectTeamService = projectTeamService;
+                this.chatBotService = chatBotService;
         }
 
         /* ------------------------------------------------------------------ */
@@ -336,6 +339,41 @@ public class ProjectController {
                 m.put("teammates", projectTeamService.listTeammatesForProject(projectId));
 
                 return ResponseEntity.ok(m);
+        }
+
+        /* ------------------------------------------------------------------ */
+        /* GET /api/projects/{id}/suggestions */
+        /* ------------------------------------------------------------------ */
+
+        @Operation(summary = "Get teammate suggestions", description = """
+                        Uses the ML backend to find the best-matching candidates for a project
+                        based on skills, experience, and trust scores. Returns up to `top` results.""")
+        @ApiResponses({
+                        @ApiResponse(responseCode = "200", description = "Suggestions returned (may be empty)"),
+                        @ApiResponse(responseCode = "400", description = "Invalid project ID"),
+                        @ApiResponse(responseCode = "401", description = "Unauthorized"),
+                        @ApiResponse(responseCode = "404", description = "Project not found"),
+                        @ApiResponse(responseCode = "500", description = "Internal server error")
+        })
+        @GetMapping("/{id}/suggestions")
+        public ResponseEntity<?> getTeammateSuggestions(
+                        @Parameter(description = "Project ID") @PathVariable("id") String projectIdStr,
+                        @Parameter(description = "Max number of suggestions") @RequestParam(defaultValue = "5") int top) {
+
+                Long projectId = parseId(projectIdStr);
+                if (projectId == null) {
+                        return ResponseEntity.badRequest()
+                                        .body(Map.of("message", "Invalid project id"));
+                }
+
+                ProjectData p = projectService.getProjectById(projectId);
+                if (p == null) {
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                        .body(Map.of("message", "Project not found"));
+                }
+
+                var suggestions = chatBotService.getSuggestedTeammates(projectId, top);
+                return ResponseEntity.ok(suggestions);
         }
 
         /* ------------------------------------------------------------------ */

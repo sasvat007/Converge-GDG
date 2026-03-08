@@ -343,3 +343,19 @@ export async function rejectRequest(requestId: number) {
     });
     return handleRes<Record<string, unknown>>(res);
 }
+
+/* ================================================================== */
+/*  TEAMMATE SUGGESTIONS (ML-powered matching)                        */
+/* ================================================================== */
+
+/**
+ * GET /api/projects/:projectId/suggestions?top=N
+ * Fetches ML-suggested teammates for a project.
+ * Returns candidates with match scores (capability + trust).
+ */
+export async function getTeammateSuggestions(projectId: number, top = 5) {
+    const res = await fetch(`${BASE}/api/projects/${projectId}/suggestions?top=${top}`, {
+        headers: authHeaders(),
+    });
+    return handleRes<Record<string, unknown>[]>(res);
+}

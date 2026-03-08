@@ -347,6 +347,81 @@ public class ChatBotService {
     }
   }
 
+  /**
+   * Calls the Django ML backend to get top-N suggested teammates for a project.
+   * Enriches each match with user profile data from the database.
+   */
+  public List<Map<String, Object>> getSuggestedTeammates(Long projectId, int top) {
+    List<Map<String, Object>> results = new ArrayList<>();
+
+    try {
+      String url = String.format(
+          "https://fundamentally-historiographic-leif.ngrok-free.dev/api/project/match/%d/?top=%d",
+          projectId, top);
+
+      RestTemplate restTemplate = new RestTemplate();
+      HttpHeaders headers = new HttpHeaders();
+      headers.setContentType(MediaType.APPLICATION_JSON);
+
+      // The ML endpoint is POST with an empty body
+      HttpEntity<String> request = new HttpEntity<>("{}", headers);
+      ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+
+      if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+        log.warn("ML match API returned {}: {}", response.getStatusCode(), response.getBody());
+        return results;
+      }
+
+      JsonNode root = mapper.readTree(response.getBody());
+      JsonNode matches = root.path("matches");
+
+      if (!matches.isArray()) {
+        log.warn("ML match API response has no 'matches' array");
+        return results;
+      }
+
+      for (JsonNode match : matches) {
+        long resumeId = match.path("resume_id").asLong();
+        double finalScore = match.path("final_score").asDouble();
+
+        // Extract sub-scores
+        JsonNode layer1 = match.path("layer1_capability");
+        double capabilityScore = layer1.path("capability_score").asDouble();
+
+        JsonNode layer2 = match.path("layer2_trust");
+        double trustScore = layer2.path("trust_score").asDouble();
+
+        // Look up profile from DB
+        Optional<JsonData> profileOpt = jsonDataRepository.findById(resumeId);
+        if (profileOpt.isEmpty()) {
+          log.debug("Skipping match resume_id={} — profile not found in DB", resumeId);
+          continue;
+        }
+
+        JsonData p = profileOpt.get();
+
+        Map<String, Object> suggestion = new LinkedHashMap<>();
+        suggestion.put("resumeId", resumeId);
+        suggestion.put("email", p.getEmail());
+        suggestion.put("name", p.getName());
+        suggestion.put("department", p.getDepartment());
+        suggestion.put("institution", p.getInstitution());
+        suggestion.put("year", p.getYear());
+        suggestion.put("availability", p.getAvailability());
+        suggestion.put("finalScore", finalScore);
+        suggestion.put("capabilityScore", capabilityScore);
+        suggestion.put("trustScore", trustScore);
+
+        results.add(suggestion);
+      }
+
+    } catch (Exception e) {
+      log.warn("Failed to get teammate suggestions from ML service: {}", e.getMessage());
+    }
+
+    return results;
+  }
+
   public void sendProjectAndOwnerResume(ProjectData project) {
     if (project == null) return;
 

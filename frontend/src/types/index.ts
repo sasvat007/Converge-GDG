@@ -37,7 +37,7 @@ export interface Profile {
     availability: string | null;    // "low" | "medium" | "high" — how available for projects
     resumePdfUrl?: string | null;   // URL to download the user's resume PDF
     Resume?: string;                // Raw JSON string from backend — contains AI-parsed resume data
-                                    // This gets JSON.parse()'d into a ParsedResume object (see below)
+    // This gets JSON.parse()'d into a ParsedResume object (see below)
 }
 
 /* ------------------------------------------------------------------ */
@@ -96,7 +96,7 @@ export interface Project {
     type: string;                   // "Software Development" | "Research" | "Design" | etc.
     visibility: string;             // "public" | "private"
     requiredSkills: string;         // Comma-separated string of skills (e.g., "React,Python,Docker")
-                                    // NOTE: stored as a string, not an array — needs .split(",") to use
+    // NOTE: stored as a string, not an array — needs .split(",") to use
     preferredTechnologies?: string; // Optional comma-separated tech stack
     githubRepo?: string;            // Optional GitHub URL
     description?: string;           // Optional project description
@@ -152,4 +152,22 @@ export interface ApiError {
     status: number;                 // HTTP status code (400, 401, 404, 500, etc.)
     error: string;                  // Short error name (e.g., "Not Found", "Unauthorized")
     message: string;                // Human-readable error message
+}
+
+/* ------------------------------------------------------------------ */
+/*  SuggestedTeammate — ML-suggested candidate for a project           */
+/* ------------------------------------------------------------------ */
+// Returned by GET /api/projects/:id/suggestions. Each suggestion
+// includes the candidate's profile info and ML-computed match scores.
+export interface SuggestedTeammate {
+    resumeId: number;               // Profile ID (maps to JsonData.id in the database)
+    email: string;                  // Candidate's email address
+    name: string | null;            // Display name
+    department: string | null;      // Department
+    institution: string | null;     // University/institution
+    year: string | null;            // Academic year
+    availability: string | null;    // "low" | "medium" | "high"
+    finalScore: number;             // Combined match score (0–1)
+    capabilityScore: number;        // Skills/experience match score (0–1)
+    trustScore: number;             // Reliability/rating score (0–1)
 }

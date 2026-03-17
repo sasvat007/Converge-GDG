@@ -950,11 +950,12 @@
 }
 
 .auth-card-inner .footer-links {
-  color: #666;
+  color: #fff;
 }
 
 .auth-card-inner .footer-links a:hover {
-  color: #4f46e5;
+  color: #fff;
+  opacity: 0.8;
 }
 
 .auth-card-inner .file-drop-zone {
@@ -1260,18 +1261,24 @@
   gap: 1.5rem;
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--text-secondary);
+  color: #fff;
+}
+
+.footer-links a {
+  color: #fff;
+  transition: opacity var(--transition-fast);
 }
 
 .footer-links a:hover {
-  color: var(--accent);
+  opacity: 0.8;
+  color: #fff;
 }
 
 .footer-dot {
   width: 4px;
   height: 4px;
   border-radius: 9999px;
-  background: var(--text-muted);
+  background: rgba(255, 255, 255, 0.6);
   align-self: center;
 }
 
@@ -1846,7 +1853,7 @@
   width: 48px;
   height: 48px;
   background: var(--primary);
-  color: white;
+  color: linear-gradient(135deg, #4f46e5, #7c3aed);
   border-radius: 50%;
   border: 4px solid var(--bg-elevated);
   display: flex;
@@ -1871,7 +1878,8 @@
 }
 
 .find-teammates-btn {
-  background: linear-gradient(135deg, var(--primary), #8b5cf6);
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  /* background: linear-gradient(135deg, var(--primary), #8b5cf6); */
   color: white;
   border: none;
   border-radius: var(--radius-md);

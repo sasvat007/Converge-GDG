@@ -212,7 +212,7 @@ export default function RegisterPage() {
                                         <input
                                             id="reg-dept"
                                             className="form-input"
-                                            placeholder="Computer Science"
+                                            placeholder=""
                                             value={form.department}
                                             onChange={(e) => set("department", e.target.value)}
                                         />
@@ -226,7 +226,7 @@ export default function RegisterPage() {
                                         <input
                                             id="reg-institution"
                                             className="form-input"
-                                            placeholder="SNU"
+                                            placeholder=""
                                             value={form.institution}
                                             onChange={(e) => set("institution", e.target.value)}
                                         />

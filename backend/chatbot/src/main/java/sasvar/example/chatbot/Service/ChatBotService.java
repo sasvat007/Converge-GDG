@@ -340,7 +340,7 @@ public class ChatBotService {
               ? Map.of("resume_id", profile.getId(), "resume_json", parsedJsonNode)
               : Map.of("parsed_json", parsedJsonNode);
 
-      postToDjango("https://fundamentally-historiographic-leif.ngrok-free.dev/api/resume/json/", payload);
+      postToDjango("https://ml.nitilvijay.me/api/resume/json/", payload);
 
     } catch (Exception e) {
       log.warn("Failed to send resume JSON to Django ML service: {}", e.getMessage());
@@ -356,7 +356,7 @@ public class ChatBotService {
 
     try {
       String url = String.format(
-          "https://fundamentally-historiographic-leif.ngrok-free.dev/api/project/match/%d/?top=%d",
+          "https://ml.nitilvijay.me/api/project/match/%d/?top=%d",
           projectId, top);
 
       RestTemplate restTemplate = new RestTemplate();

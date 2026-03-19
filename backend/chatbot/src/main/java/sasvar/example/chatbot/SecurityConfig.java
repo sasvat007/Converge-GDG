@@ -78,7 +78,7 @@ public class SecurityConfig {
     CorsConfiguration config = new CorsConfiguration();
 
     config.setAllowedOrigins(
-        List.of("http://localhost:5173", "http://localhost:5174", "http://localhost:3000", "https://converge-gdg-5f1p.vercel.app","https://converge.sasvat.me"));
+        List.of("http://localhost:5173", "http://localhost:5174", "http://localhost:3000", "https://converge-gdg-5f1p.vercel.app","https://sasvat.me"));
 
     config.setAllowedOriginPatterns(
             List.of(

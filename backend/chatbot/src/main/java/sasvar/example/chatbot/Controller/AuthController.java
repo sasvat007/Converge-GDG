@@ -100,20 +100,22 @@ public class AuthController {
         }
         userRepository.save(user);
 
-        // --- parse resume & build profile ---
-        JsonData savedProfile;
-        try {
-            // If resumeText is provided, parse it via AI; otherwise use empty JSON
-            String parsedJson = (resumeText != null && !resumeText.isBlank())
-                    ? chatBotService.convertJSON(resumeText)
-                    : "{}";
-            byte[] pdfBytes = decodePdf(resumePdf64);
+        // --- save profile & start async parsing ---
+    JsonData savedProfile;
+    try {
+        byte[] pdfBytes = decodePdf(resumePdf64);
 
-            savedProfile = chatBotService.saveJsonForEmail(
-                    parsedJson, email, name, year,
-                    department, institution, availability, pdfBytes);
+        // Save an empty profile instantly (skip AI extraction by passing skipAi = true)
+        savedProfile = chatBotService.saveJsonForEmail(
+                "{}", email, name, year,
+                department, institution, availability, pdfBytes, true);
 
-        } catch (Exception ex) {
+        // Trigger asynchronous background parsing
+        if ((resumeText != null && !resumeText.isBlank()) || (pdfBytes != null && pdfBytes.length > 0)) {
+            chatBotService.parseAndSaveResumeAsync(resumeText, pdfBytes, email);
+        }
+
+    } catch (Exception ex) {
             log.error("Failed to parse/save resume during registration for {}", email, ex);
             safeDeleteUser(user);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

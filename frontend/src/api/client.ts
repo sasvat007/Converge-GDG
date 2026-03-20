@@ -28,7 +28,8 @@
 // Since Vite's proxy (in vite.config.ts) forwards /api and /auth requests
 // to the backend, we don't need to specify http://localhost:8080 here.
 // An empty string means "use the current domain" (e.g., http://localhost:5173).
-const BASE = import.meta.env.VITE_API_BASE_URL;
+// const BASE = import.meta.env.VITE_API_BASE_URL;
+const BASE = "http://localhost:8080";
 
 /* ------------------------------------------------------------------ */
 /*  Helper Functions                                                   */

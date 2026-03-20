@@ -197,6 +197,19 @@ public class ChatBotService {
       String providedInstitution,
       String providedAvailability,
       byte[] resumePdf) {
+    return saveJsonForEmail(json, email, providedName, providedYear, providedDepartment, providedInstitution, providedAvailability, resumePdf, false);
+  }
+
+  public JsonData saveJsonForEmail(
+      String json,
+      String email,
+      String providedName,
+      String providedYear,
+      String providedDepartment,
+      String providedInstitution,
+      String providedAvailability,
+      byte[] resumePdf,
+      boolean skipAi) {
 
     if (email == null || email.isBlank()) {
       throw new RuntimeException("Email required to save profile");
@@ -212,7 +225,7 @@ public class ChatBotService {
 
     // If no resume text was parsed (json is "{}") but a PDF was uploaded,
     // extract text from the PDF and run it through Gemini automatically.
-    if ("{}".equals(validJson) && resumePdf != null && resumePdf.length > 0) {
+    if (!skipAi && "{}".equals(validJson) && resumePdf != null && resumePdf.length > 0) {
       log.warn("[PDF-DEBUG] No resumeText provided — extracting text from PDF for {}", email);
       String pdfText = extractTextFromPdf(resumePdf);
       if (pdfText != null && !pdfText.isBlank()) {
@@ -247,6 +260,35 @@ public class ChatBotService {
     fillMissingFromJson(profile, validJson);
 
     return jsonDataRepository.save(profile);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Async Background Parsing */
+  /* ------------------------------------------------------------------ */
+
+  @org.springframework.scheduling.annotation.Async
+  public void parseAndSaveResumeAsync(String resumeText, byte[] resumePdf, String email) {
+      log.info("Starting async AI parsing for {}", email);
+      try {
+          String textToParse = resumeText;
+          if ((textToParse == null || textToParse.isBlank()) && resumePdf != null && resumePdf.length > 0) {
+              textToParse = extractTextFromPdf(resumePdf);
+          }
+          if (textToParse != null && !textToParse.isBlank()) {
+              String validJson = validateJson(convertJSON(textToParse));
+              JsonData profile = jsonDataRepository.findByEmail(email).orElse(null);
+              if (profile != null) {
+                  profile.setProfileJson(validJson);
+                  var saved = jsonDataRepository.save(profile);
+                  sendResumeJson(saved);
+                  log.info("Finished async AI parsing for {}", email);
+              }
+          } else {
+              log.info("No resume text or PDF provided for {}, skipping async parsing", email);
+          }
+      } catch (Exception e) {
+          log.error("Async AI parsing failed for {}", email, e);
+      }
   }
 
   public JsonData updateResumeForEmail(String json, String email, byte[] resumePdf) {

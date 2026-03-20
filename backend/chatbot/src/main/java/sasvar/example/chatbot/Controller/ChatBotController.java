@@ -22,6 +22,8 @@ import sasvar.example.chatbot.Database.JsonData;
 import sasvar.example.chatbot.Exception.ProfileNotFoundException;
 import sasvar.example.chatbot.Service.ChatBotService;
 
+import sasvar.example.chatbot.Repository.UserRepository;
+
 @RestController
 @RequestMapping("/api")
 @Tag(
@@ -32,9 +34,11 @@ public class ChatBotController {
   private static final Logger log = LoggerFactory.getLogger(ChatBotController.class);
 
   private final ChatBotService chatBotService;
+  private final UserRepository userRepository;
 
-  public ChatBotController(ChatBotService chatBotService) {
+  public ChatBotController(ChatBotService chatBotService, UserRepository userRepository) {
     this.chatBotService = chatBotService;
+    this.userRepository = userRepository;
   }
 
   /* ------------------------------------------------------------------ */
@@ -126,6 +130,7 @@ public class ChatBotController {
     Map<String, Object> profile = buildProfileMap(data);
     profile.put("id", data.getId());
     profile.put("Resume", data.getProfileJson());
+    userRepository.findByEmail(data.getEmail()).ifPresent(u -> profile.put("role", u.getRole()));
 
     return ResponseEntity.ok(profile);
   }

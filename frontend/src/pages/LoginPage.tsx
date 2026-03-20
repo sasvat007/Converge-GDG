@@ -80,9 +80,13 @@ export default function LoginPage() {
             // but setAuth expects a Profile type. `as any` bypasses the type check.
             setAuth(data.token, data.profile as any);
 
-            // Show success toast and redirect to dashboard
+            // Show success toast and redirect to dashboard (or profile for admins)
             addToast("Welcome back!", "success");
-            navigate("/dashboard");
+            if (data.profile?.role === "admin") {
+                navigate("/profile");
+            } else {
+                navigate("/dashboard");
+            }
         } catch (err: any) {
             // `catch (err: any)` catches any error thrown by apiLogin.
             // The `any` type allows accessing err.message without TypeScript errors.
@@ -94,7 +98,7 @@ export default function LoginPage() {
             setBusy(false);
         }
     };
-    
+
     // ---- JSX (THE UI) ----
     return (
         <div className="auth-layout bg-doodle">

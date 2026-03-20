@@ -19,13 +19,15 @@ import sasvar.example.chatbot.Database.JsonData;
 import sasvar.example.chatbot.Database.ProjectData;
 import sasvar.example.chatbot.Exception.ProfileNotFoundException;
 import sasvar.example.chatbot.Repository.JsonDataRepository;
-
+import sasvar.example.chatbot.Repository.UserRepository;
+import sasvar.example.chatbot.Database.User;
 @Service
 public class ChatBotService {
 
   private static final Logger log = LoggerFactory.getLogger(ChatBotService.class);
 
   private final JsonDataRepository jsonDataRepository;
+  private final UserRepository userRepository;
   private final ObjectMapper mapper = new ObjectMapper();
 
   @Value("${gemini.api.key}")
@@ -35,8 +37,9 @@ public class ChatBotService {
       "https://generativelanguage.googleapis.com/v1beta/models/"
           + "gemini-2.5-flash:generateContent?key=%s";
 
-  public ChatBotService(JsonDataRepository jsonDataRepository) {
+  public ChatBotService(JsonDataRepository jsonDataRepository, UserRepository userRepository) {
     this.jsonDataRepository = jsonDataRepository;
+    this.userRepository = userRepository;
   }
 
   /* ------------------------------------------------------------------ */
@@ -399,6 +402,15 @@ public class ChatBotService {
         }
 
         JsonData p = profileOpt.get();
+
+        // Admin users should not be suggested as teammates
+        boolean isAdmin = userRepository.findByEmail(p.getEmail())
+                                        .map(u -> "admin".equalsIgnoreCase(u.getRole()))
+                                        .orElse(false);
+        if (isAdmin) {
+          log.debug("Skipping match resume_id={} — user is admin", resumeId);
+          continue;
+        }
 
         Map<String, Object> suggestion = new LinkedHashMap<>();
         suggestion.put("resumeId", resumeId);

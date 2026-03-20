@@ -37,6 +37,7 @@ export interface Profile {
     availability: string | null;    // "low" | "medium" | "high" — how available for projects
     resumePdfUrl?: string | null;   // URL to download the user's resume PDF
     Resume?: string;                // Raw JSON string from backend — contains AI-parsed resume data
+    role?: string;                  // User role (e.g., "admin" or "user")
     // This gets JSON.parse()'d into a ParsedResume object (see below)
 }
 

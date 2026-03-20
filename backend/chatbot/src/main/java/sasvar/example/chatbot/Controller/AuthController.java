@@ -161,9 +161,10 @@ public class AuthController {
         String token = jwtUtils.generateToken(user.getEmail());
 
         Map<String, Object> resp = new HashMap<>();
-        resp.put("token", token);
+    resp.put("token", token);
+    resp.put("role", user.getRole());
 
-        JsonData profile = chatBotService.getProfileByEmail(email);
+    JsonData profile = chatBotService.getProfileByEmail(email);
         if (profile != null) {
             resp.put("profile", buildProfileMap(profile));
         }

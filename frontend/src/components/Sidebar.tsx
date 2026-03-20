@@ -63,7 +63,7 @@ export default function Sidebar() {
             // .then() chains: the API returns an array → we filter for PENDING → count them
             // `as any` is a type cast that bypasses TypeScript checks (not ideal but works)
             .catch(() => { });
-            // .catch() swallows errors silently — if the API fails, the badge just shows 0
+        // .catch() swallows errors silently — if the API fails, the badge just shows 0
     }, [location.pathname]);
     // ↑ [location.pathname] dependency: re-run when URL changes (e.g., /dashboard → /explore)
 
@@ -90,7 +90,7 @@ export default function Sidebar() {
     // This array defines all the sidebar navigation items.
     // Each object has: path, label, icon component, and optional badge count.
     // We .map() over this array below to render the links.
-    const links = [
+    const allLinks = [
         { to: "/dashboard", label: "Dashboard", icon: <LayoutDashboard /> },
         { to: "/explore", label: "Explore", icon: <Compass /> },
         { to: "/projects/new", label: "New Project", icon: <FolderPlus /> },
@@ -103,6 +103,11 @@ export default function Sidebar() {
         },
         { to: "/profile", label: "Profile", icon: <User /> },
     ];
+
+    // Filter links: Admin users only see the Profile page
+    const links = profile?.role === "admin"
+        ? allLinks.filter(l => l.to === "/profile")
+        : allLinks;
 
     // ---- JSX (THE UI) ----
     // <> ... </> is a FRAGMENT — it lets you return multiple elements without adding

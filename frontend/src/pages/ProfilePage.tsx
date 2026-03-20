@@ -22,9 +22,9 @@ import { useToast } from "../context/ToastContext";
 import type { ParsedResume } from "../types";
 import {
     GraduationCap, Building2, Clock, Download, Code,
-    Lightbulb, Trophy, Briefcase, Target,
+    Lightbulb, Trophy, Briefcase, Target, Archive
 } from "lucide-react";
-import { resumeDownloadUrl } from "../api/client";
+import { resumeDownloadUrl, adminDownloadAllResumesUrl } from "../api/client";
 
 export default function ProfilePage() {
     const { profile } = useAuth();     // Current user's profile from AuthContext
@@ -33,6 +33,7 @@ export default function ProfilePage() {
     // Parsed resume data — starts as null, populated from profile.Resume JSON string
     const [resume, setResume] = useState<ParsedResume | null>(null);
     const [downloading, setDownloading] = useState(false);
+    const [downloadingAll, setDownloadingAll] = useState(false);
 
     // ---- AUTHENTICATED RESUME DOWNLOAD ----
     // We can't use a plain <a href> because the browser won't send the JWT.
@@ -59,6 +60,32 @@ export default function ProfilePage() {
             addToast("Could not download resume", "error");
         } finally {
             setDownloading(false);
+        }
+    };
+
+    // ---- CONTEXT: ADMIN DOWNLOAD ----
+    const handleDownloadAll = async () => {
+        setDownloadingAll(true);
+        try {
+            const token = localStorage.getItem("token");
+            const res = await fetch(adminDownloadAllResumesUrl(), {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
+            if (!res.ok) throw new Error("Download all failed");
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `all_resumes.zip`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            addToast("All resumes downloaded successfully", "success");
+        } catch {
+            addToast("Could not download all resumes", "error");
+        } finally {
+            setDownloadingAll(false);
         }
     };
 
@@ -133,10 +160,16 @@ export default function ProfilePage() {
 
                     {/* Download resume link — opens in a new tab */}
                     {profile.id && (
-                        <div className="profile-actions">
+                        <div className="profile-actions" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                             <button onClick={handleDownload} disabled={downloading} className="btn btn-secondary btn-sm">
                                 <Download size={14} /> {downloading ? "Downloading…" : "Download Resume"}
                             </button>
+                            {/* Conditional Admin Button */}
+                            {profile.role === "admin" && (
+                                <button onClick={handleDownloadAll} disabled={downloadingAll} className="btn btn-primary btn-sm">
+                                    <Archive size={14} /> {downloadingAll ? "Downloading…" : "Download All Resumes"}
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>

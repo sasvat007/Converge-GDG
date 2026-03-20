@@ -218,6 +218,13 @@ export function resumeDownloadUrl(id: number) {
     return `${BASE}/api/resume/download/${id}`;
 }
 
+/**
+ * Returns the URL to download all resumes as an admin.
+ */
+export function adminDownloadAllResumesUrl() {
+    return `${BASE}/api/admin/resumes/download-all`;
+}
+
 /* ================================================================== */
 /*  PROJECT ENDPOINTS (require auth token)                            */
 /* ================================================================== */
